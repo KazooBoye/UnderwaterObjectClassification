@@ -50,7 +50,7 @@ def run_preprocessing():
         "--suffix", "balanced_v1"
     ]
     
-    print("🚀 Starting preprocessing pipeline...")
+    print("Starting preprocessing pipeline...")
     print(f"Command: {' '.join(cmd)}")
     
     try:

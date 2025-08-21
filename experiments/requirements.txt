@@ -1,0 +1,63 @@
+# Underwater Object Detection Experiments Requirements
+# GPU-accelerated TensorFlow setup for three approaches
+
+# Core ML Framework
+tensorflow-gpu==2.13.0
+tensorflow-addons==0.21.0
+tensorflow-datasets==4.9.2
+
+# Computer Vision and Image Processing
+opencv-python==4.8.0.76
+Pillow==10.0.0
+albumentations==1.3.1
+imgaug==0.4.0
+
+# Object Detection Frameworks
+# For YOLOv8 approach
+ultralytics==8.0.186
+torch==2.0.1  # Required by ultralytics
+torchvision==0.15.2
+
+# For Faster R-CNN approach
+tensorflow-object-detection-api==0.1.3
+pycocotools==2.0.7
+lxml==4.9.3
+matplotlib==3.7.2
+
+# Scientific Computing
+numpy==1.24.3
+pandas==2.0.3
+scikit-learn==1.3.0
+scipy==1.11.1
+
+# Visualization and Monitoring
+matplotlib==3.7.2
+seaborn==0.12.2
+plotly==5.15.0
+tensorboard==2.13.0
+wandb==0.15.8  # For experiment tracking
+
+# Progress and Utilities
+tqdm==4.66.1
+click==8.1.6
+PyYAML==6.0.1
+python-dotenv==1.0.0
+
+# Evaluation Metrics
+pycocotools==2.0.7
+mean-average-precision==2021.4.26.0
+
+# Data Loading and Augmentation
+tf-keras==2.13.1
+tf-models-official==2.13.1
+
+# GPU Memory Management
+tensorflow-memory-growth==1.0.0
+
+# Development and Testing
+pytest==7.4.0
+jupyter==1.0.0
+ipython==8.14.0
+
+# Optional: For distributed training
+horovod==0.28.1  # Remove if not using multi-GPU setup

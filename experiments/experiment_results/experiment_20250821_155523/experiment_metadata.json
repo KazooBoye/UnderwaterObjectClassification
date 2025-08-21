@@ -1,0 +1,11 @@
+{
+  "start_time": "2025-08-21T15:55:23.735215",
+  "dataset_path": "../preprocessed_dataset",
+  "results_dir": "./experiment_results/experiment_20250821_155523",
+  "approaches": [
+    "yolov8",
+    "faster_rcnn",
+    "detr"
+  ],
+  "status": "ready_to_start"
+}

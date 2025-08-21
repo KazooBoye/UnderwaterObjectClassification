@@ -1,0 +1,118 @@
+# Approach 1: YOLOv8-based One-Stage Detector Configuration
+approach: "one_stage_yolov8"
+model_name: "underwater_yolov8"
+
+# Dataset settings
+dataset:
+  root_path: "/Users/caoducanh/Desktop/Coding/UnderwaterObjectClassification/preprocessed_dataset"
+  num_classes: 7
+  classes: ['fish', 'jellyfish', 'penguin', 'puffin', 'shark', 'starfish', 'stingray']
+  image_size: [640, 640]
+  
+# Model architecture
+model:
+  architecture: "yolov8"
+  variant: "yolov8m"  # yolov8n, yolov8s, yolov8m, yolov8l, yolov8x
+  pretrained: true
+  pretrained_weights: "yolov8m.pt"
+  
+# Training parameters
+training:
+  batch_size: 16
+  epochs: 150
+  learning_rate: 1e-3
+  weight_decay: 5e-4
+  momentum: 0.937
+  
+  # Learning rate schedule
+  lr_scheduler: "cosine"
+  warmup_epochs: 3
+  warmup_momentum: 0.8
+  warmup_bias_lr: 0.1
+  
+  # Loss function settings
+  loss_weights:
+    box: 7.5
+    cls: 0.5
+    dfl: 1.5
+  
+  # Class weights for imbalanced dataset
+  class_weights: [0.258, 0.992, 1.334, 2.423, 1.944, 5.932, 3.740]
+  
+  # Data augmentation
+  augmentation:
+    mosaic: 1.0
+    mixup: 0.1
+    copy_paste: 0.3
+    degrees: 30.0        # Reduced from 45 for edge protection
+    translate: 0.08      # Reduced from 0.15 for edge protection  
+    scale: 0.5
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.5
+    hsv_h: 0.015
+    hsv_s: 0.7
+    hsv_v: 0.4
+
+# Model-specific settings
+yolo_settings:
+  anchors: "auto"  # Auto-generate anchors
+  anchor_scales: [2, 4, 8]  # For P3, P4, P5 levels
+  anchor_ratios: [0.5, 1.0, 2.0]
+  
+  # NMS settings
+  nms:
+    iou_threshold: 0.45
+    conf_threshold: 0.25
+    max_det: 150  # Increased for crowded underwater scenes
+    
+  # Multi-scale training
+  multi_scale: true
+  img_size_min: 480
+  img_size_max: 800
+  
+# Underwater-specific optimizations
+underwater_optimizations:
+  color_enhancement: true
+  contrast_adjustment: true
+  underwater_augmentations:
+    - "blue_green_shift"
+    - "water_distortion" 
+    - "light_attenuation"
+
+# Evaluation settings
+evaluation:
+  metrics: ["mAP@0.5", "mAP@0.5:0.95", "precision", "recall", "F1"]
+  iou_thresholds: [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+  save_predictions: true
+  visualize_predictions: true
+  
+# Hardware settings
+hardware:
+  device: "cuda"  # cuda, cpu
+  mixed_precision: true
+  compile_model: true  # TensorFlow model compilation
+  
+# Experiment tracking
+experiment:
+  name: "underwater_yolov8_balanced"
+  project: "underwater_object_detection"
+  tags: ["yolov8", "underwater", "balanced_dataset"]
+  log_gradients: false
+  log_predictions: 100  # Log first 100 predictions
+  
+# Checkpointing
+checkpoints:
+  save_period: 10  # Save every 10 epochs
+  save_best_only: true
+  monitor: "val_mAP@0.5"
+  mode: "max"
+  
+# Early stopping
+early_stopping:
+  enabled: true
+  patience: 25
+  monitor: "val_mAP@0.5"
+  mode: "max"
+  min_delta: 0.001

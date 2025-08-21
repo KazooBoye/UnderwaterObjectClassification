@@ -1,0 +1,13 @@
+2025-08-21 15:55:23,734 - INFO - 🌊 Starting Underwater Object Detection Experiments
+2025-08-21 15:55:23,735 - INFO - Results will be saved to: ./experiment_results/experiment_20250821_155523
+2025-08-21 15:55:23,735 - INFO - Dataset path: ../preprocessed_dataset
+2025-08-21 15:55:23,735 - INFO - ✅ Experiment setup completed!
+2025-08-21 15:55:23,735 - INFO - 🚀 Ready to start training the three approaches:
+2025-08-21 15:55:23,735 - INFO -    1. YOLOv8 (One-stage detector)
+2025-08-21 15:55:23,736 - INFO -    2. Faster R-CNN (Two-stage detector)
+2025-08-21 15:55:23,736 - INFO -    3. DETR (Transformer-based detector)
+2025-08-21 15:55:23,736 - INFO - 📁 Experiment metadata saved to: ./experiment_results/experiment_20250821_155523/experiment_metadata.json
+2025-08-21 15:55:23,736 - INFO - 
+🎯 To proceed with training, the implementations need to be completed.
+2025-08-21 15:55:23,736 - INFO - 📋 Current status: All three approach implementations are ready!
+2025-08-21 15:55:23,736 - INFO - ⏭️  Next step: Run individual training scripts or implement unified trainer.

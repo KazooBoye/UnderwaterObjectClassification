@@ -45,11 +45,11 @@ New `validate_edge_objects()` method:
 ## Risk Assessment by Transformation Type
 
 ### **SAFE (No Edge Loss)**
-- `HorizontalFlip` ✅
-- `RandomBrightnessContrast` ✅  
-- `HueSaturationValue` ✅
-- `GaussNoise` ✅
-- `RandomGamma` ✅
+- `HorizontalFlip` - Applied
+- `RandomBrightnessContrast` - Applied
+- `HueSaturationValue` - Applied
+- `GaussNoise` - Applied
+- `RandomGamma` - Applied
 
 ### **LOW RISK (With Limits)**
 - `Rotate(limit=15-30)` ⚠️ (was 45°)
@@ -62,7 +62,7 @@ New `validate_edge_objects()` method:
 - `CoarseDropout` (small holes only) ⚠️⚠️
 
 ### **HIGH RISK (Eliminated/Minimized)**
-- `RandomRotate90` ❌ (Removed - too aggressive)
+- `RandomRotate90` - Removed (too aggressive)
 - `OpticalDistortion` ⚠️⚠️⚠️ (Minimal settings only)
 - `GridDistortion` ⚠️⚠️⚠️ (Gentle settings only)
 
@@ -90,10 +90,10 @@ The pipeline now tracks:
 ## Trade-offs
 
 ### **Benefits:**
-- ✅ Better preservation of rare class samples (starfish, stingray, puffin)
-- ✅ Higher quality augmented images
-- ✅ More reliable training data
-- ✅ Fewer corrupted bounding boxes
+- Better preservation of rare class samples (starfish, stingray, puffin)
+- Higher quality augmented images
+- More reliable training data
+- Fewer corrupted bounding boxes
 
 ### **Considerations:**
 - ⚠️ Slightly less aggressive augmentation diversity

@@ -202,7 +202,7 @@ class UnderwaterDatasetPreprocessor:
     
     def oversample_minority_classes(self, split: str = 'train') -> List[Tuple[str, str]]:
         """Create oversampled dataset with balanced class distribution."""
-        print(f"📊 Oversampling minority classes for {split} split...")
+        print(f"Oversampling minority classes for {split} split...")
         
         split_path = self.dataset_path / split
         labels_path = split_path / 'labels'
@@ -419,7 +419,7 @@ class UnderwaterDatasetPreprocessor:
     def process_split(self, split: str, file_list: List[Tuple[str, str]]):
         """Process a dataset split with augmentation and balancing."""
         
-        print(f"🔄 Processing {split} split...")
+        print(f"Processing {split} split...")
         
         output_images_dir = self.output_path / f"{split}_{self.config['output_suffix']}" / "images"
         output_labels_dir = self.output_path / f"{split}_{self.config['output_suffix']}" / "labels"
@@ -542,7 +542,7 @@ class UnderwaterDatasetPreprocessor:
         with open(output_file, 'w') as f:
             yaml.dump(data_config, f, default_flow_style=False)
         
-        print(f"✅ Created data configuration: {output_file}")
+        print(f"Created data configuration: {output_file}")
     
     def save_statistics(self):
         """Save preprocessing statistics and analysis."""
@@ -565,7 +565,7 @@ class UnderwaterDatasetPreprocessor:
         with open(pickle_file, 'wb') as f:
             pickle.dump(stats, f)
         
-        print(f"✅ Saved statistics: {stats_file}")
+        print(f"Saved statistics: {stats_file}")
         
         # Create summary report
         self.create_summary_report()
@@ -578,7 +578,7 @@ class UnderwaterDatasetPreprocessor:
             "UNDERWATER DATASET PREPROCESSING REPORT",
             "=" * 80,
             "",
-            "📊 ORIGINAL DATASET STATISTICS:",
+            "ORIGINAL DATASET STATISTICS:",
             "-" * 40,
         ]
         
@@ -598,7 +598,7 @@ class UnderwaterDatasetPreprocessor:
             f"Images with multiple classes: {sum(1 for x in self.original_stats['overall']['classes_per_image'] if x > 1)} "
             f"({sum(1 for x in self.original_stats['overall']['classes_per_image'] if x > 1) / len(self.original_stats['overall']['classes_per_image']) * 100:.1f}%)",
             "",
-            "🔧 PREPROCESSING CONFIGURATION:",
+            "PREPROCESSING CONFIGURATION:",
             "-" * 40,
             f"Output suffix: {self.config['output_suffix']}",
             f"Max samples per class: {self.config['max_samples_per_class']}",
@@ -606,7 +606,7 @@ class UnderwaterDatasetPreprocessor:
             f"Medium augmentation count: {self.config['medium_augmentation_count']}",
             f"Light augmentation count: {self.config['light_augmentation_count']}",
             "",
-            "💡 RECOMMENDED TRAINING PARAMETERS:",
+            "RECOMMENDED TRAINING PARAMETERS:",
             "-" * 40,
         ])
         
@@ -632,10 +632,10 @@ class UnderwaterDatasetPreprocessor:
         with open(report_file, 'w') as f:
             f.write('\n'.join(report_lines))
         
-        print(f"✅ Created summary report: {report_file}")
+        print(f"Created summary report: {report_file}")
         
         # Print key statistics
-        print("\n📊 PREPROCESSING SUMMARY:")
+        print("\nPREPROCESSING SUMMARY:")
         print(f"Original total objects: {total_original}")
         print(f"Class imbalance ratio (max:min): {max(original_counts.values())//min(original_counts.values()) if min(original_counts.values()) > 0 else 'inf'}")
         print(f"Output directory: {self.output_path}")
@@ -643,7 +643,7 @@ class UnderwaterDatasetPreprocessor:
     def run_preprocessing(self):
         """Execute the complete preprocessing pipeline."""
         
-        print("🚀 Starting Underwater Dataset Preprocessing Pipeline")
+        print("Starting Underwater Dataset Preprocessing Pipeline")
         print("=" * 60)
         
         # Step 1: Analyze original dataset
@@ -686,8 +686,8 @@ class UnderwaterDatasetPreprocessor:
         # Step 6: Save statistics and reports
         self.save_statistics()
         
-        print("✅ Preprocessing pipeline completed successfully!")
-        print(f"📁 Output saved to: {self.output_path}")
+        print("Preprocessing pipeline completed successfully!")
+        print(f"Output saved to: {self.output_path}")
 
 
 def main():

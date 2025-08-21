@@ -1,0 +1,241 @@
+# Approach 2: Faster R-CNN Two-Stage Detector Configuration
+approach: "two_stage_faster_rcnn"
+model_name: "underwater_faster_rcnn"
+
+# Dataset settings
+dataset:
+  root_path: "/Users/caoducanh/Desktop/Coding/UnderwaterObjectClassification/preprocessed_dataset"
+  num_classes: 7
+  classes: ['fish', 'jellyfish', 'penguin', 'puffin', 'shark', 'starfish', 'stingray']
+  image_size: [800, 800]  # Larger for better small object detection
+  
+# Model architecture
+model:
+  architecture: "faster_rcnn"
+  backbone: "resnet101"  # resnet50, resnet101
+  fpn: true  # Feature Pyramid Network
+  pretrained: true
+  pretrained_weights: "imagenet"
+  
+  # Backbone settings
+  backbone_settings:
+    frozen_stages: 1  # Freeze first stage
+    norm_eval: true
+    style: "pytorch"
+    
+  # Neck (FPN) settings
+  neck_settings:
+    in_channels: [256, 512, 1024, 2048]
+    out_channels: 256
+    num_outs: 5
+    
+# RPN (Region Proposal Network) settings
+rpn:
+  anchor_generator:
+    scales: [8]  # Applied to each level
+    ratios: [0.5, 1.0, 2.0]
+    strides: [4, 8, 16, 32, 64]  # For P2, P3, P4, P5, P6
+    
+  bbox_coder:
+    type: "DeltaXYWHBBoxCoder"
+    target_means: [0.0, 0.0, 0.0, 0.0]
+    target_stds: [1.0, 1.0, 1.0, 1.0]
+    
+  loss_cls:
+    type: "CrossEntropyLoss"
+    use_sigmoid: true
+    loss_weight: 1.0
+    
+  loss_bbox:
+    type: "L1Loss"
+    loss_weight: 1.0
+    
+  # Training settings
+  train_cfg:
+    assigner:
+      type: "MaxIoUAssigner"
+      pos_iou_thr: 0.7
+      neg_iou_thr: 0.3
+      min_pos_iou: 0.3
+      match_low_quality: true
+      
+    sampler:
+      type: "RandomSampler"
+      num: 256
+      pos_fraction: 0.5
+      
+    allowed_border: 0
+    pos_weight: -1
+    debug: false
+    
+  # Testing settings
+  test_cfg:
+    nms_pre: 2000
+    min_bbox_size: 0
+    score_thr: 0.05
+    nms:
+      type: "nms"
+      iou_threshold: 0.7
+    max_per_img: 150  # Increased for crowded scenes
+
+# ROI Head settings
+roi_head:
+  type: "StandardRoIHead"
+  
+  # ROI extractor
+  bbox_roi_extractor:
+    type: "SingleRoIExtractor"
+    roi_layer:
+      type: "RoIAlign"
+      output_size: 7
+      sampling_ratio: 0
+    out_channels: 256
+    featmap_strides: [4, 8, 16, 32]
+    
+  # ROI head
+  bbox_head:
+    type: "Shared2FCBBoxHead"
+    in_channels: 256
+    fc_out_channels: 1024
+    roi_feat_size: 7
+    num_classes: 8  # 7 + background
+    bbox_coder:
+      type: "DeltaXYWHBBoxCoder"
+      target_means: [0.0, 0.0, 0.0, 0.0]
+      target_stds: [0.1, 0.1, 0.2, 0.2]
+      
+    # Loss functions
+    loss_cls:
+      type: "CrossEntropyLoss"
+      use_sigmoid: false
+      loss_weight: 1.0
+      class_weight: [1.0, 0.258, 0.992, 1.334, 2.423, 1.944, 5.932, 3.740]  # Including background
+      
+    loss_bbox:
+      type: "L1Loss"
+      loss_weight: 1.0
+      
+  # Training settings
+  train_cfg:
+    assigner:
+      type: "MaxIoUAssigner"
+      pos_iou_thr: 0.5
+      neg_iou_thr: 0.5
+      min_pos_iou: 0.5
+      match_low_quality: false
+      
+    sampler:
+      type: "RandomSampler"
+      num: 512
+      pos_fraction: 0.25
+      
+    pos_weight: -1
+    debug: false
+    
+  # Testing settings
+  test_cfg:
+    score_thr: 0.05
+    nms:
+      type: "nms"
+      iou_threshold: 0.5
+    max_per_img: 150
+    
+# Training parameters
+training:
+  batch_size: 8  # Smaller due to larger images and model
+  epochs: 150
+  learning_rate: 2e-4
+  weight_decay: 1e-4
+  
+  # Learning rate schedule
+  lr_scheduler: "step"
+  lr_steps: [100, 130]
+  lr_gamma: 0.1
+  warmup: "linear"
+  warmup_iters: 1000
+  warmup_ratio: 0.1
+  
+  # Gradient clipping
+  grad_clip:
+    max_norm: 35
+    norm_type: 2
+    
+# Data augmentation for two-stage detector
+augmentation:
+  # More conservative augmentation to preserve object boundaries
+  resize:
+    type: "Resize"
+    img_scale: [800, 800]
+    keep_ratio: true
+    
+  random_flip:
+    type: "RandomFlip"
+    flip_ratio: 0.5
+    
+  normalize:
+    type: "Normalize"
+    mean: [123.675, 116.28, 103.53]
+    std: [58.395, 57.12, 57.375]
+    to_rgb: true
+    
+  # Underwater-specific augmentations
+  color_jitter:
+    brightness: 0.2
+    contrast: 0.15
+    saturation: 0.1
+    hue: 0.05
+
+# Underwater-specific optimizations
+underwater_optimizations:
+  multi_scale_training: true
+  scale_ranges: [[640, 800], [800, 1000], [1000, 1200]]
+  
+  # Feature enhancement
+  feature_enhancement:
+    enabled: true
+    type: "FPN"
+    extra_levels: 1  # Add P6 level
+    
+  # Class balancing strategies
+  class_balancing:
+    oversample_rare_classes: true
+    focal_loss: false  # Use class weights instead
+    hard_negative_mining: true
+
+# Evaluation settings
+evaluation:
+  metrics: ["bbox_mAP", "bbox_mAP_50", "bbox_mAP_75"]
+  metric_options:
+    bbox_mAP:
+      iou_thrs: [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+      area_ranges: [[0, 10000000000.0], [0, 1024], [1024, 9216], [9216, 10000000000.0]]
+  save_predictions: true
+  
+# Hardware settings
+hardware:
+  device: "cuda"
+  mixed_precision: true
+  find_unused_parameters: false
+  
+# Experiment tracking
+experiment:
+  name: "underwater_faster_rcnn_fpn"
+  project: "underwater_object_detection"
+  tags: ["faster_rcnn", "fpn", "underwater", "two_stage"]
+  log_gradients: false
+  log_predictions: 50
+  
+# Checkpointing
+checkpoints:
+  save_period: 10
+  save_best_only: true
+  monitor: "bbox_mAP"
+  mode: "max"
+  
+# Early stopping
+early_stopping:
+  enabled: true
+  patience: 30
+  monitor: "bbox_mAP"
+  mode: "max"
+  min_delta: 0.001

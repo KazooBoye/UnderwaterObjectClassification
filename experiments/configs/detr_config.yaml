@@ -1,0 +1,246 @@
+# Approach 3: DETR Transformer-Based Detector Configuration
+approach: "transformer_detr"
+model_name: "underwater_detr"
+
+# Dataset settings
+dataset:
+  root_path: "/Users/caoducanh/Desktop/Coding/UnderwaterObjectClassification/preprocessed_dataset"
+  num_classes: 7
+  classes: ['fish', 'jellyfish', 'penguin', 'puffin', 'shark', 'starfish', 'stingray']
+  image_size: [800, 800]
+  max_objects: 150  # Increased for crowded underwater scenes (up to 56 objects observed)
+  
+# Model architecture
+model:
+  architecture: "detr"
+  backbone: "resnet50"  # resnet50, resnet101
+  pretrained_backbone: true
+  
+  # Transformer settings
+  transformer:
+    d_model: 256
+    nhead: 8
+    num_encoder_layers: 6
+    num_decoder_layers: 6
+    dim_feedforward: 2048
+    dropout: 0.1
+    activation: "relu"
+    normalize_before: false
+    return_intermediate_dec: true
+    
+  # Position embedding
+  position_embedding:
+    type: "sine"  # sine, learned
+    temperature: 10000
+    normalize: true
+    scale: null
+    
+  # Object queries
+  num_queries: 150  # Increased from standard 100 to handle up to 56 objects
+  
+  # Classification head
+  cls_head:
+    type: "linear"
+    hidden_dim: 256
+    num_classes: 8  # 7 + no-object class
+    
+  # Bounding box head  
+  bbox_head:
+    type: "mlp"
+    hidden_dim: 256
+    num_layers: 3
+
+# Loss function settings
+losses:
+  # Matcher for Hungarian algorithm
+  matcher:
+    type: "HungarianMatcher"
+    cost_class: 1.0
+    cost_bbox: 5.0
+    cost_giou: 2.0
+    
+  # Loss weights
+  loss_weights:
+    loss_ce: 1.0  # Classification loss
+    loss_bbox: 5.0  # L1 bbox loss
+    loss_giou: 2.0  # GIoU loss
+    
+  # Class weights for imbalanced dataset
+  class_weights: [0.1, 0.258, 0.992, 1.334, 2.423, 1.944, 5.932, 3.740]  # no-object + 7 classes
+  
+  # Focal loss for classification (optional)
+  focal_loss:
+    enabled: false
+    alpha: 0.25
+    gamma: 2.0
+    
+  # Auxiliary decoding losses
+  aux_loss: true  # Loss at each decoder layer
+  aux_loss_weight: 1.0
+
+# Training parameters
+training:
+  batch_size: 4  # Smaller due to transformer memory requirements
+  epochs: 300  # Transformers need more epochs
+  learning_rate: 1e-4
+  weight_decay: 1e-4
+  
+  # Learning rate schedule
+  lr_scheduler: "step"
+  lr_drop: 200  # Drop LR at epoch 200
+  lr_drop_factor: 0.1
+  
+  # Gradient clipping
+  clip_max_norm: 0.1
+  
+  # Optimizer settings
+  optimizer:
+    type: "AdamW"
+    lr: 1e-4
+    weight_decay: 1e-4
+    betas: [0.9, 0.999]
+    
+  # Learning rate for backbone
+  lr_backbone: 1e-5  # Lower LR for pre-trained backbone
+  
+# Data augmentation for DETR
+augmentation:
+  # DETR-specific augmentations (more conservative)
+  random_resize:
+    sizes: [480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800]
+    max_size: 1333
+    
+  random_resize_crop:
+    enabled: true
+    min_size: 384
+    max_size: 600
+    
+  horizontal_flip:
+    prob: 0.5
+    
+  # Color augmentations
+  color_jitter:
+    brightness: 0.4
+    contrast: 0.4
+    saturation: 0.4
+    hue: 0.1
+    prob: 0.8
+    
+  # Normalization (ImageNet stats)
+  normalize:
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
+    
+  # Underwater-specific augmentations
+  underwater_effects:
+    blue_green_shift: 0.2
+    contrast_enhancement: 0.3
+    light_attenuation: 0.1
+
+# DETR-specific settings
+detr_settings:
+  # Query initialization
+  query_init: "random"  # random, learned
+  
+  # Attention settings
+  attention:
+    dropout: 0.0
+    pre_norm: false
+    
+  # Decoder settings
+  decoder:
+    return_intermediate: true
+    norm: "layer_norm"
+    
+  # Post-processing
+  postprocess:
+    score_threshold: 0.5
+    apply_nms: false  # DETR doesn't typically use NMS
+    
+# Underwater domain adaptations
+underwater_adaptations:
+  # Multi-scale deformable attention (if using Deformable DETR)
+  deformable_attention:
+    enabled: false  # Set to true for Deformable DETR
+    n_levels: 4
+    n_heads: 8
+    n_points: 4
+    
+  # Scene context modeling
+  scene_context:
+    global_context: true
+    depth_aware_encoding: false
+    
+  # Object relationship modeling
+  object_relations:
+    spatial_relations: true
+    semantic_relations: false
+
+# Evaluation settings
+evaluation:
+  metrics: ["coco_eval"]  # Uses COCO evaluation metrics
+  coco_eval_types: ["bbox"]
+  
+  # Custom metrics for underwater dataset
+  custom_metrics:
+    - "per_class_ap"
+    - "minority_class_recall"
+    - "crowded_scene_performance"
+    
+  save_predictions: true
+  visualize_attention: true  # Visualize attention maps
+  
+# Hardware settings
+hardware:
+  device: "cuda"
+  mixed_precision: true
+  gradient_checkpointing: true  # Save memory
+  
+# Memory optimization
+memory_optimization:
+  # Reduce memory usage for large images and transformer
+  enable_amp: true  # Automatic Mixed Precision
+  gradient_accumulation_steps: 4  # Effective batch size = 4 * 4 = 16
+  pin_memory: true
+  num_workers: 4
+
+# Experiment tracking
+experiment:
+  name: "underwater_detr_transformer"
+  project: "underwater_object_detection"
+  tags: ["detr", "transformer", "underwater", "attention"]
+  log_gradients: false
+  log_predictions: 30
+  log_attention_maps: 10  # Log attention visualizations
+  
+# Checkpointing
+checkpoints:
+  save_period: 25  # Save every 25 epochs (transformers train longer)
+  save_best_only: true
+  monitor: "coco_eval/bbox_mAP"
+  mode: "max"
+  save_attention_weights: true
+  
+# Early stopping
+early_stopping:
+  enabled: true
+  patience: 50  # Longer patience for transformer training
+  monitor: "coco_eval/bbox_mAP"
+  mode: "max"
+  min_delta: 0.001
+  
+# Advanced DETR features (experimental)
+advanced_features:
+  # Conditional DETR
+  conditional_detr:
+    enabled: false
+    
+  # DAB-DETR (Dynamic Anchor Boxes)
+  dab_detr:
+    enabled: false
+    
+  # DN-DETR (De-noising)
+  dn_detr:
+    enabled: false
+    num_dn_groups: 5
+    dn_noise_scale: 0.4
