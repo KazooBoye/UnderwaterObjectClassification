@@ -1,0 +1,34 @@
+{
+  "input_size": 640,
+  "num_classes": 7,
+  "max_boxes": 100,
+  "iou_threshold": 0.5,
+  "confidence_threshold": 0.25,
+  "class_names": [
+    "fish",
+    "jellyfish",
+    "penguin",
+    "puffin",
+    "shark",
+    "starfish",
+    "stingray"
+  ],
+  "batch_size": 16,
+  "epochs": 100,
+  "learning_rate": 0.001,
+  "warmup_epochs": 5,
+  "strides": [
+    8,
+    16,
+    32
+  ],
+  "anchors_per_scale": 3,
+  "grid_sizes": [
+    80,
+    40,
+    20
+  ],
+  "box_loss_weight": 0.05,
+  "cls_loss_weight": 0.5,
+  "obj_loss_weight": 1.0
+}

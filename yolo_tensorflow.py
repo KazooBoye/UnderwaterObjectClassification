@@ -137,16 +137,13 @@ class YOLOFPN(Model):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         
-        # Top-down pathway - match channel dimensions
-        self.lateral_conv1 = layers.Conv2D(512, 1, use_bias=False)  # c4 (512) -> 512
-        self.lateral_conv2 = layers.Conv2D(256, 1, use_bias=False)  # c3 (256) -> 256
+        # Top-down pathway - lateral convs reduce channels from higher to lower level
+        self.lateral_conv1 = layers.Conv2D(512, 1, use_bias=False)  # Reduce c5 (1024) to match c4 (512)
+        self.lateral_conv2 = layers.Conv2D(256, 1, use_bias=False)  # Reduce p4 (512) to match c3 (256)
         
-        # Reduce channels for p5 to match p4
-        self.reduce_conv = layers.Conv2D(512, 1, use_bias=False)    # c5 (1024) -> 512
-        
-        # Bottom-up pathway with proper channel matching
-        self.downsample_conv1 = layers.Conv2D(512, 3, 2, padding='same', use_bias=False)  # 256 -> 512
-        self.downsample_conv2 = layers.Conv2D(512, 3, 2, padding='same', use_bias=False)  # 512 -> 512
+        # Bottom-up pathway - upsample convs increase channels to match target levels
+        self.downsample_conv1 = layers.Conv2D(512, 3, 2, padding='same', use_bias=False)  # p3 (256) -> match p4 (512)
+        self.downsample_conv2 = layers.Conv2D(1024, 3, 2, padding='same', use_bias=False)  # p4 (512) -> match p5 (1024)
         
         # Output convolutions
         self.output_conv1 = keras.Sequential([
@@ -173,14 +170,20 @@ class YOLOFPN(Model):
         c3, c4, c5 = features
         
         # Top-down pathway with proper channel matching
-        p5 = self.reduce_conv(c5)  # 1024 -> 512
-        p4 = self.lateral_conv1(c4) + self.upsample(p5)  # 512 + 512 = 512
-        p3 = self.lateral_conv2(c3) + self.upsample(p4)  # 256 + 256 = 256
+        p5 = c5  # [B, 10, 10, 1024]
         
-        # Bottom-up pathway
-        n3 = p3  # 256 channels
-        n4 = self.downsample_conv1(n3) + p4  # 256 -> 512, then + 512 = 512
-        n5 = self.downsample_conv2(n4) + p5  # 512 -> 512, then + 512 = 512
+        # For p4: reduce c5 channels to match c4, then upsample and add
+        p5_reduced = self.lateral_conv1(p5)  # [B, 10, 10, 1024] → [B, 10, 10, 512] 
+        p4 = c4 + self.upsample(p5_reduced)  # [B, 20, 20, 512] + [B, 20, 20, 512]
+        
+        # For p3: reduce p4 channels to match c3, then upsample and add  
+        p4_reduced = self.lateral_conv2(p4)  # [B, 20, 20, 512] → [B, 20, 20, 256]
+        p3 = c3 + self.upsample(p4_reduced)  # [B, 40, 40, 256] + [B, 40, 40, 256]
+        
+        # Bottom-up pathway with proper channel matching
+        n3 = p3  # [B, 40, 40, 256]
+        n4 = self.downsample_conv1(n3) + p4  # [B, 20, 20, 512] + [B, 20, 20, 512]
+        n5 = self.downsample_conv2(n4) + p5  # [B, 10, 10, 1024] + [B, 10, 10, 1024]
         
         # Apply output convolutions
         p3_out = self.output_conv1(n3)  # 80x80
@@ -196,35 +199,46 @@ class YOLOHead(Model):
         super().__init__(**kwargs)
         self.num_classes = num_classes
         
-        # Shared convolutions
-        self.shared_conv = keras.Sequential([
-            layers.Conv2D(256, 3, padding='same', use_bias=False),
-            layers.BatchNormalization(),
-            layers.Activation('swish'),
-            layers.Conv2D(256, 3, padding='same', use_bias=False),
-            layers.BatchNormalization(),
-            layers.Activation('swish')
-        ])
-        
-        # Detection outputs: [x, y, w, h, objectness, class_probs...]
-        self.output_conv = layers.Conv2D(
-            3 * (5 + num_classes),  # 3 anchors per grid cell
-            1,
-            bias_initializer='zeros'
-        )
+        # Create separate heads for different feature map sizes
+        # Each head handles different input channels (256, 512, 1024)
+        self.heads = []
+        for channels in [256, 512, 1024]:  # P3, P4, P5 channels
+            head = keras.Sequential([
+                # First reduce all channels to 256 for consistency
+                layers.Conv2D(256, 1, use_bias=False),
+                layers.BatchNormalization(),
+                layers.Activation('swish'),
+                # Shared processing
+                layers.Conv2D(256, 3, padding='same', use_bias=False),
+                layers.BatchNormalization(),
+                layers.Activation('swish'),
+                layers.Conv2D(256, 3, padding='same', use_bias=False),
+                layers.BatchNormalization(),
+                layers.Activation('swish'),
+                # Final detection output
+                layers.Conv2D(
+                    3 * (5 + num_classes),  # 3 anchors per grid cell
+                    1,
+                    bias_initializer='zeros'
+                )
+            ])
+            self.heads.append(head)
     
-    def call(self, x, training=None):
-        x = self.shared_conv(x)
-        output = self.output_conv(x)
+    def call(self, features, training=None):
+        """Process all FPN features"""
+        outputs = []
+        for i, feature in enumerate(features):
+            output = self.heads[i](feature, training=training)
+            
+            # Reshape to [batch, grid_h, grid_w, anchors, (5 + num_classes)]
+            batch_size = tf.shape(output)[0]
+            grid_h = tf.shape(output)[1]
+            grid_w = tf.shape(output)[2]
+            
+            output = tf.reshape(output, [batch_size, grid_h, grid_w, 3, 5 + self.num_classes])
+            outputs.append(output)
         
-        # Reshape to [batch, grid_h, grid_w, anchors, (5 + num_classes)]
-        batch_size = tf.shape(output)[0]
-        grid_h = tf.shape(output)[1]
-        grid_w = tf.shape(output)[2]
-        
-        output = tf.reshape(output, [batch_size, grid_h, grid_w, 3, 5 + self.num_classes])
-        
-        return output
+        return outputs
 
 class YOLOModel(Model):
     """Complete YOLO Model"""
@@ -244,11 +258,8 @@ class YOLOModel(Model):
         # FPN
         fpn_features = self.fpn(features, training=training)
         
-        # Detection heads
-        outputs = []
-        for feature in fpn_features:
-            output = self.head(feature, training=training)
-            outputs.append(output)
+        # Detection heads - head now processes all features at once
+        outputs = self.head(fpn_features, training=training)
         
         return outputs
 
@@ -499,7 +510,7 @@ def train_yolo_model(data_path: str, output_dir: str = 'yolo_training_output'):
         logger.info(f"\nEpoch {epoch + 1}/{config.epochs}")
         
         # Training phase
-        train_loss_metric.reset_states()
+        train_loss_metric.reset_state()
         
         for batch_idx, (images, labels) in enumerate(train_dataset):
             with tf.GradientTape() as tape:
@@ -519,7 +530,7 @@ def train_yolo_model(data_path: str, output_dir: str = 'yolo_training_output'):
                 logger.info(f"Batch {batch_idx}: Loss = {total_loss:.4f}")
         
         # Validation phase
-        val_loss_metric.reset_states()
+        val_loss_metric.reset_state()
         
         for images, labels in val_dataset:
             predictions = model(images, training=False)
