@@ -4,3 +4,6 @@ datasetAnalysis.html
 /preprocessed_dataset
 experiments/training_20250821_161322.log
 experiments/experiment_results/experiment_20250821_161322/experiment_metadata.json
+*.pyc
+/experiments/experiments_results
+*.pyc

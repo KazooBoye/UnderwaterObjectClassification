@@ -71,6 +71,9 @@ class GPUSetup:
     @staticmethod
     def configure_gpu():
         """Configure GPU for optimal performance"""
+        # First, set up the CUDA library paths
+        GPUSetup._setup_cuda_paths()
+        
         gpus = tf.config.experimental.list_physical_devices('GPU')
         
         if gpus:
@@ -79,8 +82,17 @@ class GPUSetup:
                 for gpu in gpus:
                     tf.config.experimental.set_memory_growth(gpu, True)
                 
-                # Use mixed precision for better performance
-                tf.keras.mixed_precision.set_global_policy('mixed_float16')
+                # Test GPU functionality before setting precision policy
+                gpu_working = GPUSetup._test_basic_gpu_ops()
+                
+                if gpu_working:
+                    # Use float32 for stability with complex models like YOLOv8
+                    tf.keras.mixed_precision.set_global_policy('float32')
+                    logger.info("Using float32 precision for model compatibility")
+                else:
+                    # Fall back to float32 if there are issues
+                    tf.keras.mixed_precision.set_global_policy('float32')
+                    logger.info("Using float32 precision due to GPU compatibility issues")
                 
                 logger.info(f"GPU setup completed. Found {len(gpus)} GPU(s)")
                 for i, gpu in enumerate(gpus):
@@ -93,6 +105,66 @@ class GPUSetup:
         else:
             logger.warning("No GPU found. Using CPU.")
             return False
+    
+    @staticmethod
+    def _test_basic_gpu_ops():
+        """Test basic GPU operations to check compatibility"""
+        try:
+            # Test simple tensor operations
+            with tf.device('/GPU:0'):
+                x = tf.constant([[1.0, 2.0], [3.0, 4.0]])
+                y = tf.matmul(x, x)
+            
+            logger.info("Basic GPU operations test: PASSED")
+            return True
+        except Exception as e:
+            logger.warning(f"Basic GPU operations test: FAILED - {e}")
+            return False
+    
+    @staticmethod
+    def _setup_cuda_paths():
+        """Setup CUDA library paths for TensorFlow"""
+        # Get the current Python site-packages path
+        import site
+        site_packages = site.getsitepackages()[0]
+        
+        # CUDA library paths - prioritize newer versions
+        cuda_paths = [
+            f'{site_packages}/nvidia/cudnn/lib',
+            f'{site_packages}/nvidia/cublas/lib', 
+            f'{site_packages}/nvidia/cufft/lib',
+            f'{site_packages}/nvidia/curand/lib',
+            f'{site_packages}/nvidia/cusolver/lib',
+            f'{site_packages}/nvidia/cusparse/lib',
+            f'{site_packages}/nvidia/cuda_runtime/lib',
+            # Fallback to older paths
+            '/usr/local/lib/python3.10/dist-packages/nvidia/cudnn/lib',
+            '/usr/local/lib/python3.10/dist-packages/nvidia/cublas/lib', 
+            '/usr/local/lib/python3.10/dist-packages/nvidia/cufft/lib',
+            '/usr/local/lib/python3.10/dist-packages/nvidia/curand/lib',
+            '/usr/local/lib/python3.10/dist-packages/nvidia/cusolver/lib',
+            '/usr/local/lib/python3.10/dist-packages/nvidia/cusparse/lib',
+            '/usr/local/lib/python3.10/dist-packages/nvidia/cuda_runtime/lib',
+            '/usr/local/cuda/lib64',
+            '/usr/lib/wsl/lib'
+        ]
+        
+        # Filter existing paths
+        existing_paths = [path for path in cuda_paths if os.path.exists(path)]
+        
+        if existing_paths:
+            current_ld_path = os.environ.get('LD_LIBRARY_PATH', '')
+            new_paths = ':'.join(existing_paths)
+            
+            if current_ld_path:
+                os.environ['LD_LIBRARY_PATH'] = f"{new_paths}:{current_ld_path}"
+            else:
+                os.environ['LD_LIBRARY_PATH'] = new_paths
+            
+            logger.info(f"Set LD_LIBRARY_PATH with CUDA libraries: {len(existing_paths)} paths")
+            logger.info(f"Using CuDNN from: {existing_paths[0]}")
+        else:
+            logger.warning("No CUDA library paths found")
     
     @staticmethod
     def get_strategy():
