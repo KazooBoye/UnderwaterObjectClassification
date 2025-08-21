@@ -1,0 +1,30 @@
+# YOLO TensorFlow Training Requirements
+# Core deep learning framework
+tensorflow>=2.13.0
+tensorflow-gpu>=2.13.0  # For CUDA acceleration
+
+# Computer vision and image processing
+opencv-python>=4.8.0
+Pillow>=10.0.0
+
+# Scientific computing
+numpy>=1.24.0
+scipy>=1.11.0
+
+# Data handling and utilities
+PyYAML>=6.0
+pathlib2>=2.3.7
+
+# Visualization and monitoring
+matplotlib>=3.7.0
+seaborn>=0.12.0
+tqdm>=4.65.0
+
+# Logging and configuration
+colorama>=0.4.6
+
+# Optional: For advanced augmentations (if needed)
+# albumentations>=1.3.0
+
+# Development and debugging
+ipython>=8.14.0

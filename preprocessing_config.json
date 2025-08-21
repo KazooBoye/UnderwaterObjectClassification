@@ -1,0 +1,70 @@
+{
+  "description": "Configuration for underwater dataset preprocessing",
+  "preprocessing": {
+    "output_suffix": "balanced_v1",
+    "max_samples_per_class": 2000,
+    "heavy_augmentation_count": 10,
+    "medium_augmentation_count": 5,
+    "light_augmentation_count": 2,
+    "random_seed": 42,
+    "enable_mosaic": true,
+    "mosaic_probability": 0.1,
+    "min_bbox_area": 0.001,
+    "max_aspect_ratio": 5.0,
+    "min_aspect_ratio": 0.2
+  },
+  "augmentation_settings": {
+    "rotation_limit": 45,
+    "brightness_limit": 0.2,
+    "contrast_limit": 0.15,
+    "hue_shift_limit": 10,
+    "saturation_shift_limit": 15,
+    "gaussian_noise_var": [10.0, 50.0],
+    "elastic_alpha": 2,
+    "distortion_limit": 0.2
+  },
+  "class_specific_settings": {
+    "fish": {
+      "augmentation_intensity": "light",
+      "target_samples": 1500,
+      "special_augmentations": ["school_simulation"]
+    },
+    "jellyfish": {
+      "augmentation_intensity": "medium", 
+      "target_samples": 1500,
+      "special_augmentations": ["transparency_effects"]
+    },
+    "penguin": {
+      "augmentation_intensity": "medium",
+      "target_samples": 1500,
+      "special_augmentations": ["scale_variation"]
+    },
+    "shark": {
+      "augmentation_intensity": "medium",
+      "target_samples": 1500,
+      "special_augmentations": ["elongation_preservation"]
+    },
+    "puffin": {
+      "augmentation_intensity": "heavy",
+      "target_samples": 1500,
+      "special_augmentations": ["color_preservation", "scale_variation"]
+    },
+    "stingray": {
+      "augmentation_intensity": "heavy", 
+      "target_samples": 1500,
+      "special_augmentations": ["shape_preservation", "bottom_positioning"]
+    },
+    "starfish": {
+      "augmentation_intensity": "heavy",
+      "target_samples": 1500,
+      "special_augmentations": ["shape_preservation", "texture_enhancement"]
+    }
+  },
+  "quality_control": {
+    "min_image_size": [224, 224],
+    "max_image_size": [2048, 2048],
+    "check_for_corrupted_files": true,
+    "validate_annotations": true,
+    "remove_duplicate_images": true
+  }
+}
