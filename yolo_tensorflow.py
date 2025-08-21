@@ -137,13 +137,16 @@ class YOLOFPN(Model):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         
-        # Top-down pathway
-        self.lateral_conv1 = layers.Conv2D(512, 1, use_bias=False)
-        self.lateral_conv2 = layers.Conv2D(256, 1, use_bias=False)
+        # Top-down pathway - match channel dimensions
+        self.lateral_conv1 = layers.Conv2D(512, 1, use_bias=False)  # c4 (512) -> 512
+        self.lateral_conv2 = layers.Conv2D(256, 1, use_bias=False)  # c3 (256) -> 256
         
-        # Bottom-up pathway
-        self.downsample_conv1 = layers.Conv2D(256, 3, 2, padding='same', use_bias=False)
-        self.downsample_conv2 = layers.Conv2D(512, 3, 2, padding='same', use_bias=False)
+        # Reduce channels for p5 to match p4
+        self.reduce_conv = layers.Conv2D(512, 1, use_bias=False)    # c5 (1024) -> 512
+        
+        # Bottom-up pathway with proper channel matching
+        self.downsample_conv1 = layers.Conv2D(512, 3, 2, padding='same', use_bias=False)  # 256 -> 512
+        self.downsample_conv2 = layers.Conv2D(512, 3, 2, padding='same', use_bias=False)  # 512 -> 512
         
         # Output convolutions
         self.output_conv1 = keras.Sequential([
@@ -169,15 +172,15 @@ class YOLOFPN(Model):
     def call(self, features, training=None):
         c3, c4, c5 = features
         
-        # Top-down pathway
-        p5 = c5
-        p4 = self.lateral_conv1(c4) + self.upsample(p5)
-        p3 = self.lateral_conv2(c3) + self.upsample(p4)
+        # Top-down pathway with proper channel matching
+        p5 = self.reduce_conv(c5)  # 1024 -> 512
+        p4 = self.lateral_conv1(c4) + self.upsample(p5)  # 512 + 512 = 512
+        p3 = self.lateral_conv2(c3) + self.upsample(p4)  # 256 + 256 = 256
         
         # Bottom-up pathway
-        n3 = p3
-        n4 = self.downsample_conv1(n3) + p4
-        n5 = self.downsample_conv2(n4) + p5
+        n3 = p3  # 256 channels
+        n4 = self.downsample_conv1(n3) + p4  # 256 -> 512, then + 512 = 512
+        n5 = self.downsample_conv2(n4) + p5  # 512 -> 512, then + 512 = 512
         
         # Apply output convolutions
         p3_out = self.output_conv1(n3)  # 80x80

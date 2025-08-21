@@ -1,7 +1,6 @@
 # YOLO TensorFlow Training Requirements
 # Core deep learning framework
 tensorflow>=2.13.0
-tensorflow-gpu>=2.13.0  # For CUDA acceleration
 
 # Computer vision and image processing
 opencv-python>=4.8.0
