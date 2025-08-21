@@ -637,14 +637,75 @@ class DETRTrainer:
         """Evaluate model performance"""
         print("Evaluating DETR model...")
         
+        if self.model is None:
+            print("Model not initialized. Please build model first.")
+            return None
+        
         # Load test dataset
         test_dataset = self.data_loader.create_tf_dataset('test', batch_size=1)
         
-        # Run evaluation
+        # Run basic evaluation
         test_loss = self.model.evaluate(test_dataset, verbose=1)
         print(f"Test Loss: {test_loss}")
         
-        return test_loss
+        # Get predictions for detailed metrics
+        predictions = []
+        ground_truths = []
+        
+        print("Computing predictions for mAP calculation...")
+        for batch in test_dataset.take(100):  # Limit to avoid memory issues
+            images, targets = batch
+            try:
+                pred = self.model(images, training=False)
+                
+                # Process DETR predictions
+                for i in range(len(images)):
+                    # Extract boxes, scores, and classes from DETR output
+                    if isinstance(pred, dict):
+                        pred_boxes = pred.get('pred_boxes', [[]])[i].numpy()
+                        pred_scores = pred.get('pred_logits', [[]])[i].numpy()
+                        # Convert logits to scores
+                        if len(pred_scores.shape) > 1:
+                            pred_scores = tf.nn.softmax(pred_scores, axis=-1)
+                            pred_classes = tf.argmax(pred_scores, axis=-1).numpy()
+                            pred_scores = tf.reduce_max(pred_scores, axis=-1).numpy()
+                        else:
+                            pred_classes = []
+                            pred_scores = []
+                    else:
+                        pred_boxes = []
+                        pred_scores = []
+                        pred_classes = []
+                    
+                    gt_boxes = targets['boxes'][i].numpy()
+                    gt_labels = targets['labels'][i].numpy()
+                    
+                    predictions.append({
+                        'boxes': pred_boxes,
+                        'scores': pred_scores,
+                        'labels': pred_classes
+                    })
+                    
+                    ground_truths.append({
+                        'boxes': gt_boxes,
+                        'labels': gt_labels
+                    })
+            except Exception as e:
+                print(f"Error processing batch: {e}")
+                continue
+        
+        # Calculate mAP using metrics calculator
+        try:
+            map_score = self.metrics_calculator.calculate_map(predictions, ground_truths)
+            print(f"mAP Score: {map_score}")
+        except Exception as e:
+            print(f"Error calculating mAP: {e}")
+            map_score = 0.0
+        
+        return {
+            'test_loss': test_loss,
+            'map_score': map_score
+        }
     
     def visualize_attention(self, sample_images=5):
         """Visualize attention maps from transformer"""

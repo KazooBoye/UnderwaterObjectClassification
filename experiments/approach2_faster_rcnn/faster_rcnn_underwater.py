@@ -557,17 +557,69 @@ class FasterRCNNTrainer:
         """Evaluate model performance"""
         print("Evaluating Faster R-CNN model...")
         
+        if self.model is None:
+            print("Model not initialized. Please build model first.")
+            return None
+        
         # Load test dataset
         test_dataset = self.data_loader.create_tf_dataset('test', batch_size=1)
         
-        # Run evaluation
+        # Run basic evaluation
         test_loss = self.model.evaluate(test_dataset, verbose=1)
         print(f"Test Loss: {test_loss}")
         
-        # TODO: Implement detailed evaluation metrics (COCO-style mAP)
-        # This would require post-processing predictions and NMS
+        # Get predictions for detailed metrics
+        predictions = []
+        ground_truths = []
         
-        return test_loss
+        print("Computing predictions for mAP calculation...")
+        for batch in test_dataset.take(100):  # Limit to avoid memory issues
+            images, targets = batch
+            try:
+                pred = self.model(images, training=False)
+                
+                # Process Faster R-CNN predictions
+                for i in range(len(images)):
+                    # Extract boxes, scores, and classes from model output
+                    if isinstance(pred, dict):
+                        pred_boxes = pred.get('detection_boxes', [[]])[i].numpy()
+                        pred_scores = pred.get('detection_scores', [[]])[i].numpy()  
+                        pred_classes = pred.get('detection_classes', [[]])[i].numpy()
+                    else:
+                        # Fallback if output format is different
+                        pred_boxes = []
+                        pred_scores = []
+                        pred_classes = []
+                    
+                    gt_boxes = targets['boxes'][i].numpy()
+                    gt_labels = targets['labels'][i].numpy()
+                    
+                    predictions.append({
+                        'boxes': pred_boxes,
+                        'scores': pred_scores,
+                        'labels': pred_classes
+                    })
+                    
+                    ground_truths.append({
+                        'boxes': gt_boxes,
+                        'labels': gt_labels
+                    })
+            except Exception as e:
+                print(f"Error processing batch: {e}")
+                continue
+        
+        # Calculate mAP using metrics calculator
+        try:
+            map_score = self.metrics_calculator.calculate_map(predictions, ground_truths)
+            print(f"mAP Score: {map_score}")
+        except Exception as e:
+            print(f"Error calculating mAP: {e}")
+            map_score = 0.0
+        
+        return {
+            'test_loss': test_loss,
+            'map_score': map_score
+        }
 
 def main():
     """Main training script for Faster R-CNN"""

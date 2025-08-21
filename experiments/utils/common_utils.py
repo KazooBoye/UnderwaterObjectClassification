@@ -7,6 +7,7 @@ import json
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+import keras
 from typing import Dict, List, Tuple, Optional
 import cv2
 from pathlib import Path
@@ -454,6 +455,103 @@ class Visualizer:
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
         plt.show()
+
+# Standalone utility functions for run_all_experiments.py
+def setup_gpu():
+    """Standalone GPU setup function"""
+    gpu_setup = GPUSetup()
+    return gpu_setup.configure_gpu()
+
+def load_dataset(dataset_path=None, batch_size=16, image_size=(640, 640), validation_split=0.2):
+    """Standalone dataset loading function"""
+    dataset_config = UnderwaterDatasetConfig()
+    
+    # Override config if parameters provided
+    if dataset_path:
+        dataset_config.dataset_root = dataset_path
+    if image_size:
+        dataset_config.image_size = image_size
+    dataset_config.batch_size = batch_size
+    
+    data_loader = DataLoader(dataset_config)
+    
+    train_dataset = data_loader.create_tf_dataset('train', batch_size)
+    val_dataset = data_loader.create_tf_dataset('val', batch_size)
+    test_dataset = data_loader.create_tf_dataset('test', batch_size)
+    
+    return train_dataset, val_dataset, test_dataset
+
+def create_visualization_callbacks(experiment_dir=None, approach_name=None, model_dir=None, 
+                                  patience=15, reduce_lr_patience=10, save_best_only=True):
+    """Create visualization callbacks for training"""
+    callbacks = []
+    
+    # Use model_dir if provided, otherwise use experiment_dir + approach_name
+    if model_dir:
+        base_dir = model_dir
+        approach_name = os.path.basename(model_dir).replace('approach_', '')
+    elif experiment_dir and approach_name:
+        base_dir = os.path.join(experiment_dir, approach_name)
+    else:
+        base_dir = './training_output'
+        approach_name = 'model'
+    
+    os.makedirs(base_dir, exist_ok=True)
+    
+    # TensorBoard callback
+    tensorboard_dir = os.path.join(base_dir, 'tensorboard')
+    os.makedirs(tensorboard_dir, exist_ok=True)
+    
+    tensorboard_callback = keras.callbacks.TensorBoard(
+        log_dir=tensorboard_dir,
+        histogram_freq=1,
+        write_graph=True,
+        write_images=True,
+        update_freq='epoch'
+    )
+    callbacks.append(tensorboard_callback)
+    
+    # CSV Logger
+    csv_log_path = os.path.join(base_dir, f'{approach_name}_training.csv')
+    csv_callback = keras.callbacks.CSVLogger(csv_log_path)
+    callbacks.append(csv_callback)
+    
+    # Model checkpoint
+    checkpoint_path = os.path.join(base_dir, 'checkpoints', f'{approach_name}_best.h5')
+    os.makedirs(os.path.dirname(checkpoint_path), exist_ok=True)
+    
+    checkpoint_callback = keras.callbacks.ModelCheckpoint(
+        checkpoint_path,
+        monitor='val_loss',
+        save_best_only=save_best_only,
+        save_weights_only=False,
+        mode='min',
+        verbose=1
+    )
+    callbacks.append(checkpoint_callback)
+    
+    # Early stopping
+    early_stopping_callback = keras.callbacks.EarlyStopping(
+        monitor='val_loss',
+        patience=patience,
+        restore_best_weights=True,
+        verbose=1
+    )
+    callbacks.append(early_stopping_callback)
+    
+    # Reduce learning rate on plateau
+    reduce_lr_callback = keras.callbacks.ReduceLROnPlateau(
+        monitor='val_loss',
+        factor=0.5,
+        patience=reduce_lr_patience,
+        min_lr=1e-7,
+        verbose=1
+    )
+    callbacks.append(reduce_lr_callback)
+    
+    return callbacks
+    
+    return callbacks
 
 # Initialize GPU setup when module is imported
 if __name__ == "__main__":

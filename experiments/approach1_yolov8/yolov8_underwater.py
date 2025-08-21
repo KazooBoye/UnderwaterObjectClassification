@@ -487,17 +487,65 @@ class YOLOv8Trainer:
         """Evaluate model performance"""
         print("Evaluating model...")
         
+        if self.model is None:
+            print("Model not initialized. Please build model first.")
+            return None
+        
         # Load test dataset
         test_dataset = self.data_loader.create_tf_dataset('test', batch_size=1)
         
-        # Run evaluation
+        # Run basic evaluation
         test_loss = self.model.evaluate(test_dataset, verbose=1)
         print(f"Test Loss: {test_loss}")
         
-        # TODO: Implement detailed evaluation metrics (mAP, per-class metrics)
-        # This would require post-processing predictions and computing COCO-style metrics
+        # Get predictions for detailed metrics
+        predictions = []
+        ground_truths = []
         
-        return test_loss
+        print("Computing predictions for mAP calculation...")
+        for batch in test_dataset.take(100):  # Limit to avoid memory issues
+            images, targets = batch
+            try:
+                pred = self.model(images, training=False)
+                
+                # Convert predictions to standard format
+                for i in range(len(images)):
+                    # Process YOLOv8 output - assuming it returns detection boxes
+                    if hasattr(pred, 'numpy'):
+                        pred_data = pred[i].numpy() if len(pred.shape) > 2 else pred.numpy()
+                    else:
+                        pred_data = []
+                    
+                    gt_boxes = targets['boxes'][i].numpy()
+                    gt_labels = targets['labels'][i].numpy()
+                    
+                    # Placeholder processing - needs to be adapted based on actual model output
+                    predictions.append({
+                        'boxes': pred_data[:, :4] if len(pred_data.shape) > 1 and pred_data.shape[1] >= 4 else [],
+                        'scores': pred_data[:, 4] if len(pred_data.shape) > 1 and pred_data.shape[1] > 4 else [],
+                        'labels': pred_data[:, 5] if len(pred_data.shape) > 1 and pred_data.shape[1] > 5 else []
+                    })
+                    
+                    ground_truths.append({
+                        'boxes': gt_boxes,
+                        'labels': gt_labels
+                    })
+            except Exception as e:
+                print(f"Error processing batch: {e}")
+                continue
+        
+        # Calculate mAP using metrics calculator
+        try:
+            map_score = self.metrics_calculator.calculate_map(predictions, ground_truths)
+            print(f"mAP Score: {map_score}")
+        except Exception as e:
+            print(f"Error calculating mAP: {e}")
+            map_score = 0.0
+        
+        return {
+            'test_loss': test_loss,
+            'map_score': map_score
+        }
 
 def main():
     """Main training script"""

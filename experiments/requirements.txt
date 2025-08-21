@@ -51,6 +51,3 @@ tf-keras==2.16.0
 pytest==7.4.0
 jupyter==1.0.0
 ipython==8.14.0
-
-# Optional: For distributed training
-horovod==0.28.1  # Remove if not using multi-GPU setup
