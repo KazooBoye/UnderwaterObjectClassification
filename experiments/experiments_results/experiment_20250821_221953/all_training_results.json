@@ -1,0 +1,8 @@
+{
+  "yolov8": {
+    "approach": "yolov8",
+    "error": "'NoneType' object has no attribute 'fit'",
+    "training_time": 23.967697143554688,
+    "timestamp": "2025-08-21T22:20:17.631656"
+  }
+}

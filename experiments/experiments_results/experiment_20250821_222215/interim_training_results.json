@@ -1,0 +1,8 @@
+{
+  "yolov8": {
+    "approach": "yolov8",
+    "error": "'model'",
+    "training_time": 24.198132038116455,
+    "timestamp": "2025-08-21T22:22:39.731280"
+  }
+}

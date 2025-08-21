@@ -13,8 +13,15 @@ from typing import Dict, List, Tuple, Optional
 import cv2
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-import wandb
 from datetime import datetime
+
+# Optional wandb import
+try:
+    import wandb
+    WANDB_AVAILABLE = True
+except ImportError:
+    print("Warning: wandb not available. Experiment tracking disabled.")
+    WANDB_AVAILABLE = False
 
 # Add utils to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
@@ -315,8 +322,15 @@ class YOLOv8Loss(tf.keras.losses.Loss):
 class YOLOv8Trainer:
     """Training pipeline for underwater YOLOv8"""
     
-    def __init__(self, config_path: str):
-        self.config = self._load_config(config_path)
+    def __init__(self, config_path_or_dict):
+        # Handle both config file path and config dictionary
+        if isinstance(config_path_or_dict, str):
+            self.config = self._load_config(config_path_or_dict)
+        elif isinstance(config_path_or_dict, dict):
+            self.config = config_path_or_dict
+        else:
+            raise ValueError("Config must be either a file path (str) or dictionary")
+            
         self.dataset_config = UnderwaterDatasetConfig()
         
         # Setup GPU
@@ -345,20 +359,29 @@ class YOLOv8Trainer:
     
     def setup_experiment_tracking(self):
         """Setup Weights & Biases experiment tracking"""
-        wandb.init(
-            project=self.config['experiment']['project'],
-            name=self.config['experiment']['name'],
-            tags=self.config['experiment']['tags'],
-            config=self.config
-        )
+        if WANDB_AVAILABLE and 'experiment' in self.config:
+            wandb.init(
+                project=self.config.get('experiment', {}).get('project', 'underwater-detection'),
+                name=self.config.get('experiment', {}).get('name', 'yolov8-experiment'),
+                tags=self.config.get('experiment', {}).get('tags', ['yolov8']),
+                config=self.config
+            )
+        else:
+            print("Experiment tracking disabled (wandb not available or no experiment config)")
     
     def build_model(self):
         """Build YOLOv8 model with distribution strategy"""
         with self.strategy.scope():
-            # Model configuration
-            model_config = self.config['model']
-            depth_multiple = 0.67 if model_config['variant'] == 'yolov8m' else 0.5
-            width_multiple = 0.75 if model_config['variant'] == 'yolov8m' else 0.5
+            # Model configuration - handle both nested and flattened config
+            if 'model' in self.config:
+                model_config = self.config['model']
+                variant = model_config.get('variant', 'yolov8m')
+            else:
+                # Handle flattened config
+                variant = self.config.get('variant', 'yolov8m')
+            
+            depth_multiple = 0.67 if variant == 'yolov8m' else 0.5
+            width_multiple = 0.75 if variant == 'yolov8m' else 0.5
             
             # Create model
             self.model = UnderwaterYOLOv8(
@@ -371,17 +394,26 @@ class YOLOv8Trainer:
             dummy_input = tf.random.normal([1, *self.dataset_config.image_size, 3])
             _ = self.model(dummy_input)
             
-            # Setup optimizer
-            learning_rate = self.config['training']['learning_rate']
+            # Setup optimizer - handle both nested and flattened config
+            if 'training' in self.config:
+                learning_rate = float(self.config['training']['learning_rate'])
+                weight_decay = float(self.config['training']['weight_decay'])
+                class_weights = self.config['training']['class_weights']
+            else:
+                # Handle flattened config
+                learning_rate = float(self.config.get('learning_rate', 1e-3))
+                weight_decay = float(self.config.get('weight_decay', 5e-4))
+                class_weights = self.config.get('class_weights', None)
+                
             self.optimizer = tf.keras.optimizers.AdamW(
                 learning_rate=learning_rate,
-                weight_decay=self.config['training']['weight_decay']
+                weight_decay=weight_decay
             )
             
             # Setup loss function
             self.loss_fn = YOLOv8Loss(
                 num_classes=self.dataset_config.num_classes,
-                class_weights=self.config['training']['class_weights']
+                class_weights=class_weights
             )
             
             # Compile model
@@ -398,7 +430,11 @@ class YOLOv8Trainer:
         """Prepare training and validation datasets"""
         print("Preparing datasets...")
         
-        batch_size = self.config['training']['batch_size']
+        # Handle both nested and flattened config
+        if 'training' in self.config:
+            batch_size = self.config['training']['batch_size']
+        else:
+            batch_size = self.config.get('batch_size', 16)
         
         # Create datasets
         self.train_dataset = self.data_loader.create_tf_dataset('train', batch_size)
@@ -410,21 +446,36 @@ class YOLOv8Trainer:
         
         print("Datasets prepared successfully")
     
-    def train(self):
+    def train(self, train_dataset=None, val_dataset=None, epochs=None, callbacks=None):
         """Main training loop"""
         print("Starting training...")
         
-        epochs = self.config['training']['epochs']
+        # Build model if not already built
+        if self.model is None:
+            print("Building model...")
+            self.build_model()
         
-        # Setup callbacks
-        callbacks = self._setup_callbacks()
+        # Prepare datasets if not already prepared
+        if not hasattr(self, 'train_dataset') or self.train_dataset is None:
+            print("Preparing datasets...")
+            self.prepare_datasets()
+        
+        # Use provided parameters or defaults
+        if epochs is None:
+            epochs = self.config.get('epochs', 150)
+        if train_dataset is None:
+            train_dataset = self.train_dataset
+        if val_dataset is None:
+            val_dataset = self.val_dataset
+        if callbacks is None:
+            callbacks = self._setup_callbacks()
         
         # Training loop
         with self.strategy.scope():
             history = self.model.fit(
-                self.train_dataset,
+                train_dataset,
                 epochs=epochs,
-                validation_data=self.val_dataset,
+                validation_data=val_dataset,
                 callbacks=callbacks,
                 verbose=1
             )
@@ -473,17 +524,18 @@ class YOLOv8Trainer:
         )
         callbacks.append(lr_scheduler)
         
-        # Weights & Biases callback
-        wandb_callback = wandb.keras.WandbCallback(
-            monitor='val_loss',
-            mode='min',
-            save_model=False
-        )
-        callbacks.append(wandb_callback)
+        # Weights & Biases callback (if available)
+        if WANDB_AVAILABLE:
+            wandb_callback = wandb.keras.WandbCallback(
+                monitor='val_loss',
+                mode='min',
+                save_model=False
+            )
+            callbacks.append(wandb_callback)
         
         return callbacks
     
-    def evaluate(self):
+    def evaluate(self, test_dataset=None):
         """Evaluate model performance"""
         print("Evaluating model...")
         
@@ -491,8 +543,9 @@ class YOLOv8Trainer:
             print("Model not initialized. Please build model first.")
             return None
         
-        # Load test dataset
-        test_dataset = self.data_loader.create_tf_dataset('test', batch_size=1)
+        # Use provided test dataset or load default
+        if test_dataset is None:
+            test_dataset = self.data_loader.create_tf_dataset('test', batch_size=1)
         
         # Run basic evaluation
         test_loss = self.model.evaluate(test_dataset, verbose=1)
@@ -520,11 +573,18 @@ class YOLOv8Trainer:
                     gt_labels = targets['labels'][i].numpy()
                     
                     # Placeholder processing - needs to be adapted based on actual model output
-                    predictions.append({
-                        'boxes': pred_data[:, :4] if len(pred_data.shape) > 1 and pred_data.shape[1] >= 4 else [],
-                        'scores': pred_data[:, 4] if len(pred_data.shape) > 1 and pred_data.shape[1] > 4 else [],
-                        'labels': pred_data[:, 5] if len(pred_data.shape) > 1 and pred_data.shape[1] > 5 else []
-                    })
+                    if isinstance(pred_data, np.ndarray) and len(pred_data.shape) > 1:
+                        predictions.append({
+                            'boxes': pred_data[:, :4] if pred_data.shape[1] >= 4 else [],
+                            'scores': pred_data[:, 4] if pred_data.shape[1] > 4 else np.ones(len(pred_data)),
+                            'labels': pred_data[:, 5] if pred_data.shape[1] > 5 else np.zeros(len(pred_data))
+                        })
+                    else:
+                        predictions.append({
+                            'boxes': [],
+                            'scores': [],
+                            'labels': []
+                        })
                     
                     ground_truths.append({
                         'boxes': gt_boxes,

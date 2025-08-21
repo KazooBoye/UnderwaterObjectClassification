@@ -1,0 +1,8 @@
+{
+  "yolov8": {
+    "approach": "yolov8",
+    "error": "'batch_size'",
+    "training_time": 0.005099058151245117,
+    "timestamp": "2025-08-21T22:08:49.124027"
+  }
+}

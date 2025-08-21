@@ -1,0 +1,21 @@
+2025-08-21 22:08:49,105 - underwater_training - INFO - Underwater Object Detection Training Framework
+2025-08-21 22:08:49,105 - underwater_training - INFO - Experiment directory: ./experiments_results/experiment_20250821_220849
+2025-08-21 22:08:49,105 - underwater_training - INFO - Dataset path: ../preprocessed_dataset
+2025-08-21 22:08:49,105 - underwater_training - INFO - Approaches to train: yolov8
+2025-08-21 22:08:49,118 - underwater_training - INFO - 
+============================================================
+2025-08-21 22:08:49,118 - underwater_training - INFO - Starting training for YOLOV8 approach
+2025-08-21 22:08:49,118 - underwater_training - INFO - ============================================================
+2025-08-21 22:08:49,121 - underwater_training - INFO - Loading dataset...
+2025-08-21 22:08:49,121 - underwater_training - ERROR - Error training yolov8: 'batch_size'
+2025-08-21 22:08:49,123 - underwater_training - ERROR - Traceback (most recent call last):
+  File "/Users/caoducanh/Desktop/Coding/UnderwaterObjectClassification/experiments/run_all_experiments.py", line 154, in train_single_approach
+    batch_size=config['batch_size'],
+               ~~~~~~^^^^^^^^^^^^^^
+KeyError: 'batch_size'
+
+2025-08-21 22:08:49,125 - underwater_training - INFO - 
+Training Summary:
+2025-08-21 22:08:49,125 - underwater_training - INFO -    YOLOV8: Failed - 'batch_size'
+2025-08-21 22:08:49,125 - underwater_training - INFO - 
+Experiment completed! Results saved to: ./experiments_results/experiment_20250821_220849

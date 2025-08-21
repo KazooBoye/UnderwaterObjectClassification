@@ -1,0 +1,8 @@
+{
+  "yolov8": {
+    "approach": "yolov8",
+    "error": "Argument `learning_rate` should be float, or an instance of LearningRateSchedule, or a callable (that takes in the current iteration value and returns the corresponding learning rate value). Received instead: learning_rate=1e-3",
+    "training_time": 27.346980094909668,
+    "timestamp": "2025-08-21T22:24:43.518222"
+  }
+}

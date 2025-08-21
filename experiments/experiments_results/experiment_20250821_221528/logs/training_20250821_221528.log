@@ -1,0 +1,27 @@
+2025-08-21 22:15:28,059 - underwater_training - INFO - Underwater Object Detection Training Framework
+2025-08-21 22:15:28,060 - underwater_training - INFO - Experiment directory: ./experiments_results/experiment_20250821_221528
+2025-08-21 22:15:28,060 - underwater_training - INFO - Dataset path: ../preprocessed_dataset
+2025-08-21 22:15:28,060 - underwater_training - INFO - Approaches to train: yolov8
+2025-08-21 22:15:28,076 - underwater_training - INFO - 
+============================================================
+2025-08-21 22:15:28,076 - underwater_training - INFO - Starting training for YOLOV8 approach
+2025-08-21 22:15:28,076 - underwater_training - INFO - ============================================================
+2025-08-21 22:15:28,077 - underwater_training - INFO - Loading dataset...
+2025-08-21 22:15:52,479 - underwater_training - ERROR - Error training yolov8: expected str, bytes or os.PathLike object, not dict
+2025-08-21 22:15:52,482 - underwater_training - ERROR - Traceback (most recent call last):
+  File "/Users/caoducanh/Desktop/Coding/UnderwaterObjectClassification/experiments/run_all_experiments.py", line 200, in train_single_approach
+    trainer = YOLOv8Trainer(config)
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/caoducanh/Desktop/Coding/UnderwaterObjectClassification/experiments/approach1_yolov8/yolov8_underwater.py", line 326, in __init__
+    self.config = self._load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/caoducanh/Desktop/Coding/UnderwaterObjectClassification/experiments/approach1_yolov8/yolov8_underwater.py", line 349, in _load_config
+    with open(config_path, 'r') as f:
+         ^^^^^^^^^^^^^^^^^^^^^^
+TypeError: expected str, bytes or os.PathLike object, not dict
+
+2025-08-21 22:15:52,484 - underwater_training - INFO - 
+Training Summary:
+2025-08-21 22:15:52,484 - underwater_training - INFO -    YOLOV8: Failed - expected str, bytes or os.PathLike object, not dict
+2025-08-21 22:15:52,484 - underwater_training - INFO - 
+Experiment completed! Results saved to: ./experiments_results/experiment_20250821_221528

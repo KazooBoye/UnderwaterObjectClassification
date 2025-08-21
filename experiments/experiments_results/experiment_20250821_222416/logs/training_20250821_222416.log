@@ -1,0 +1,35 @@
+2025-08-21 22:24:16,155 - underwater_training - INFO - Underwater Object Detection Training Framework
+2025-08-21 22:24:16,155 - underwater_training - INFO - Experiment directory: ./experiments_results/experiment_20250821_222416
+2025-08-21 22:24:16,155 - underwater_training - INFO - Dataset path: ../preprocessed_dataset
+2025-08-21 22:24:16,156 - underwater_training - INFO - Approaches to train: yolov8
+2025-08-21 22:24:16,170 - underwater_training - INFO - 
+============================================================
+2025-08-21 22:24:16,170 - underwater_training - INFO - Starting training for YOLOV8 approach
+2025-08-21 22:24:16,171 - underwater_training - INFO - ============================================================
+2025-08-21 22:24:16,171 - underwater_training - INFO - Loading dataset...
+2025-08-21 22:24:40,351 - underwater_training - INFO - Training yolov8 model...
+2025-08-21 22:24:43,505 - underwater_training - ERROR - Error training yolov8: Argument `learning_rate` should be float, or an instance of LearningRateSchedule, or a callable (that takes in the current iteration value and returns the corresponding learning rate value). Received instead: learning_rate=1e-3
+2025-08-21 22:24:43,517 - underwater_training - ERROR - Traceback (most recent call last):
+  File "/Users/caoducanh/Desktop/Coding/UnderwaterObjectClassification/experiments/run_all_experiments.py", line 218, in train_single_approach
+    history = trainer.train(
+              ^^^^^^^^^^^^^^
+  File "/Users/caoducanh/Desktop/Coding/UnderwaterObjectClassification/experiments/approach1_yolov8/yolov8_underwater.py", line 456, in train
+    self.build_model()
+  File "/Users/caoducanh/Desktop/Coding/UnderwaterObjectClassification/experiments/approach1_yolov8/yolov8_underwater.py", line 408, in build_model
+    self.optimizer = tf.keras.optimizers.AdamW(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/caoducanh/.platformio/penv/lib/python3.12/site-packages/keras/src/optimizers/adamw.py", line 72, in __init__
+    super().__init__(
+  File "/Users/caoducanh/.platformio/penv/lib/python3.12/site-packages/keras/src/optimizers/adam.py", line 62, in __init__
+    super().__init__(
+  File "/Users/caoducanh/.platformio/penv/lib/python3.12/site-packages/keras/src/backend/tensorflow/optimizer.py", line 21, in __init__
+    super().__init__(*args, **kwargs)
+  File "/Users/caoducanh/.platformio/penv/lib/python3.12/site-packages/keras/src/optimizers/base_optimizer.py", line 177, in __init__
+    raise ValueError(
+ValueError: Argument `learning_rate` should be float, or an instance of LearningRateSchedule, or a callable (that takes in the current iteration value and returns the corresponding learning rate value). Received instead: learning_rate=1e-3
+
+2025-08-21 22:24:43,519 - underwater_training - INFO - 
+Training Summary:
+2025-08-21 22:24:43,519 - underwater_training - INFO -    YOLOV8: Failed - Argument `learning_rate` should be float, or an instance of LearningRateSchedule, or a callable (that takes in the current iteration value and returns the corresponding learning rate value). Received instead: learning_rate=1e-3
+2025-08-21 22:24:43,519 - underwater_training - INFO - 
+Experiment completed! Results saved to: ./experiments_results/experiment_20250821_222416

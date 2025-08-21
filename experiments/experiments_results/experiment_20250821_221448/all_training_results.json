@@ -1,0 +1,8 @@
+{
+  "yolov8": {
+    "approach": "yolov8",
+    "error": "invalid literal for int() with base 10: '4.0'",
+    "training_time": 0.11167788505554199,
+    "timestamp": "2025-08-21T22:14:48.979727"
+  }
+}

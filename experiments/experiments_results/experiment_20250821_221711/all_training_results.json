@@ -1,0 +1,8 @@
+{
+  "yolov8": {
+    "approach": "yolov8",
+    "error": "YOLOv8Trainer.train() got an unexpected keyword argument 'train_dataset'",
+    "training_time": 24.51214599609375,
+    "timestamp": "2025-08-21T22:17:35.627678"
+  }
+}

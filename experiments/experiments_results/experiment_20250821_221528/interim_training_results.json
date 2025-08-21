@@ -1,0 +1,8 @@
+{
+  "yolov8": {
+    "approach": "yolov8",
+    "error": "expected str, bytes or os.PathLike object, not dict",
+    "training_time": 24.405750036239624,
+    "timestamp": "2025-08-21T22:15:52.482807"
+  }
+}

@@ -24,13 +24,28 @@ from common_utils import setup_gpu, load_dataset, create_visualization_callbacks
 from evaluation_utils import UnderwaterEvaluator, ComparativeAnalyzer
 
 # Import approach-specific trainers
+YOLOv8Trainer = None
+FasterRCNNTrainer = None
+DETRTrainer = None
+
 try:
     from yolov8_underwater import YOLOv8Trainer
-    from faster_rcnn_underwater import FasterRCNNTrainer  
+except ImportError as e:
+    print(f"Warning: Could not import YOLOv8Trainer: {e}")
+
+try:
+    from faster_rcnn_underwater import FasterRCNNTrainer
+except ImportError as e:
+    print(f"Warning: Could not import FasterRCNNTrainer: {e}")
+
+try:
     from detr_underwater import DETRTrainer
 except ImportError as e:
-    print(f"Warning: Could not import some trainers: {e}")
-    print("Make sure all approach implementations are available.")
+    print(f"Warning: Could not import DETRTrainer: {e}")
+
+if not any([YOLOv8Trainer, FasterRCNNTrainer, DETRTrainer]):
+    print("Error: No trainers could be imported. Check dependencies.")
+    print("Try installing missing packages: pip install wandb")
 
 def setup_logging(experiment_dir: str) -> logging.Logger:
     """Setup comprehensive logging for the training experiment"""
@@ -70,19 +85,42 @@ def load_experiment_config(approach: str) -> Dict[str, Any]:
     config_path = os.path.join('configs', f'{approach}_config.yaml')
     
     if not os.path.exists(config_path):
-        logger.warning(f"Config file not found: {config_path}. Using default settings.")
+        print(f"Config file not found: {config_path}. Using default settings.")
         return get_default_config(approach)
     
     try:
         import yaml
         with open(config_path, 'r') as f:
-            config = yaml.safe_load(f)
-        return config
+            raw_config = yaml.safe_load(f)
+        
+        # Flatten the nested config structure
+        flat_config = {}
+        
+        # Extract nested values and flatten them
+        if 'training' in raw_config:
+            flat_config.update(raw_config['training'])
+        if 'dataset' in raw_config:
+            flat_config.update(raw_config['dataset'])
+        if 'model' in raw_config:
+            flat_config.update(raw_config['model'])
+        
+        # Add top-level keys
+        for key, value in raw_config.items():
+            if not isinstance(value, dict):
+                flat_config[key] = value
+        
+        # Ensure required keys exist with defaults
+        defaults = get_default_config(approach)
+        for key, default_value in defaults.items():
+            if key not in flat_config:
+                flat_config[key] = default_value
+        
+        return flat_config
     except ImportError:
-        logger.warning("PyYAML not installed. Using default configuration.")
+        print("PyYAML not installed. Using default configuration.")
         return get_default_config(approach)
     except Exception as e:
-        logger.error(f"Error loading config: {e}. Using default settings.")
+        print(f"Error loading config: {e}. Using default settings.")
         return get_default_config(approach)
 
 def get_default_config(approach: str) -> Dict[str, Any]:
@@ -157,14 +195,15 @@ def train_single_approach(approach: str, config: Dict[str, Any],
         )
         
         # Create trainer based on approach
-        if approach == 'yolov8':
+        trainer = None
+        if approach == 'yolov8' and YOLOv8Trainer is not None:
             trainer = YOLOv8Trainer(config)
-        elif approach == 'faster_rcnn':
+        elif approach == 'faster_rcnn' and FasterRCNNTrainer is not None:
             trainer = FasterRCNNTrainer(config)
-        elif approach == 'detr':
+        elif approach == 'detr' and DETRTrainer is not None:
             trainer = DETRTrainer(config)
         else:
-            raise ValueError(f"Unknown approach: {approach}")
+            raise ValueError(f"Trainer not available for approach: {approach}. Check dependencies.")
         
         # Setup callbacks
         callbacks = create_visualization_callbacks(

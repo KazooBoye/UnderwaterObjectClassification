@@ -142,7 +142,7 @@ class DataLoader:
                 for line in f:
                     parts = line.strip().split()
                     if len(parts) == 5:
-                        class_id = int(parts[0])
+                        class_id = int(float(parts[0]))  # Handle both int and float strings
                         x_center, y_center, w, h = map(float, parts[1:])
                         
                         # Convert to absolute coordinates

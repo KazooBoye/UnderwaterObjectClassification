@@ -1,0 +1,30 @@
+2025-08-21 22:25:20,189 - underwater_training - INFO - Underwater Object Detection Training Framework
+2025-08-21 22:25:20,190 - underwater_training - INFO - Experiment directory: ./experiments_results/experiment_20250821_222520
+2025-08-21 22:25:20,190 - underwater_training - INFO - Dataset path: ../preprocessed_dataset
+2025-08-21 22:25:20,190 - underwater_training - INFO - Approaches to train: yolov8
+2025-08-21 22:25:20,205 - underwater_training - INFO - 
+============================================================
+2025-08-21 22:25:20,206 - underwater_training - INFO - Starting training for YOLOV8 approach
+2025-08-21 22:25:20,206 - underwater_training - INFO - ============================================================
+2025-08-21 22:25:20,207 - underwater_training - INFO - Loading dataset...
+2025-08-21 22:25:44,500 - underwater_training - INFO - Training yolov8 model...
+2025-08-21 22:26:11,311 - underwater_training - ERROR - Error training yolov8: 'NoneType' object is not iterable
+2025-08-21 22:26:11,318 - underwater_training - ERROR - Traceback (most recent call last):
+  File "/Users/caoducanh/Desktop/Coding/UnderwaterObjectClassification/experiments/run_all_experiments.py", line 218, in train_single_approach
+    history = trainer.train(
+              ^^^^^^^^^^^^^^
+  File "/Users/caoducanh/Desktop/Coding/UnderwaterObjectClassification/experiments/approach1_yolov8/yolov8_underwater.py", line 475, in train
+    history = self.model.fit(
+              ^^^^^^^^^^^^^^^
+  File "/Users/caoducanh/.platformio/penv/lib/python3.12/site-packages/keras/src/utils/traceback_utils.py", line 122, in error_handler
+    raise e.with_traceback(filtered_tb) from None
+  File "/Users/caoducanh/.platformio/penv/lib/python3.12/site-packages/keras/src/trainers/compile_utils.py", line 718, in call
+    if set(self.output_names) == set(y_true.keys()):
+       ^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'NoneType' object is not iterable
+
+2025-08-21 22:26:11,325 - underwater_training - INFO - 
+Training Summary:
+2025-08-21 22:26:11,325 - underwater_training - INFO -    YOLOV8: Failed - 'NoneType' object is not iterable
+2025-08-21 22:26:11,325 - underwater_training - INFO - 
+Experiment completed! Results saved to: ./experiments_results/experiment_20250821_222520

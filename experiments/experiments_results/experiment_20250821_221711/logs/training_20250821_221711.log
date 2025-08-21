@@ -1,0 +1,22 @@
+2025-08-21 22:17:11,100 - underwater_training - INFO - Underwater Object Detection Training Framework
+2025-08-21 22:17:11,100 - underwater_training - INFO - Experiment directory: ./experiments_results/experiment_20250821_221711
+2025-08-21 22:17:11,100 - underwater_training - INFO - Dataset path: ../preprocessed_dataset
+2025-08-21 22:17:11,100 - underwater_training - INFO - Approaches to train: yolov8
+2025-08-21 22:17:11,114 - underwater_training - INFO - 
+============================================================
+2025-08-21 22:17:11,115 - underwater_training - INFO - Starting training for YOLOV8 approach
+2025-08-21 22:17:11,115 - underwater_training - INFO - ============================================================
+2025-08-21 22:17:11,115 - underwater_training - INFO - Loading dataset...
+2025-08-21 22:17:35,624 - underwater_training - INFO - Training yolov8 model...
+2025-08-21 22:17:35,624 - underwater_training - ERROR - Error training yolov8: YOLOv8Trainer.train() got an unexpected keyword argument 'train_dataset'
+2025-08-21 22:17:35,626 - underwater_training - ERROR - Traceback (most recent call last):
+  File "/Users/caoducanh/Desktop/Coding/UnderwaterObjectClassification/experiments/run_all_experiments.py", line 218, in train_single_approach
+    history = trainer.train(
+              ^^^^^^^^^^^^^^
+TypeError: YOLOv8Trainer.train() got an unexpected keyword argument 'train_dataset'
+
+2025-08-21 22:17:35,629 - underwater_training - INFO - 
+Training Summary:
+2025-08-21 22:17:35,630 - underwater_training - INFO -    YOLOV8: Failed - YOLOv8Trainer.train() got an unexpected keyword argument 'train_dataset'
+2025-08-21 22:17:35,630 - underwater_training - INFO - 
+Experiment completed! Results saved to: ./experiments_results/experiment_20250821_221711

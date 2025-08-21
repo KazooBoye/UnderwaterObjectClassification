@@ -1,0 +1,30 @@
+2025-08-21 22:14:48,852 - underwater_training - INFO - Underwater Object Detection Training Framework
+2025-08-21 22:14:48,853 - underwater_training - INFO - Experiment directory: ./experiments_results/experiment_20250821_221448
+2025-08-21 22:14:48,853 - underwater_training - INFO - Dataset path: ../preprocessed_dataset
+2025-08-21 22:14:48,853 - underwater_training - INFO - Approaches to train: yolov8
+2025-08-21 22:14:48,867 - underwater_training - INFO - 
+============================================================
+2025-08-21 22:14:48,867 - underwater_training - INFO - Starting training for YOLOV8 approach
+2025-08-21 22:14:48,867 - underwater_training - INFO - ============================================================
+2025-08-21 22:14:48,868 - underwater_training - INFO - Loading dataset...
+2025-08-21 22:14:48,976 - underwater_training - ERROR - Error training yolov8: invalid literal for int() with base 10: '4.0'
+2025-08-21 22:14:48,979 - underwater_training - ERROR - Traceback (most recent call last):
+  File "/Users/caoducanh/Desktop/Coding/UnderwaterObjectClassification/experiments/run_all_experiments.py", line 190, in train_single_approach
+    train_dataset, val_dataset, test_dataset = load_dataset(
+                                               ^^^^^^^^^^^^^
+  File "/Users/caoducanh/Desktop/Coding/UnderwaterObjectClassification/experiments/utils/common_utils.py", line 478, in load_dataset
+    train_dataset = data_loader.create_tf_dataset('train', batch_size)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/caoducanh/Desktop/Coding/UnderwaterObjectClassification/experiments/utils/common_utils.py", line 191, in create_tf_dataset
+    annotations = self.load_yolo_annotations(labels_dir, images_dir)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/caoducanh/Desktop/Coding/UnderwaterObjectClassification/experiments/utils/common_utils.py", line 145, in load_yolo_annotations
+    class_id = int(parts[0])
+               ^^^^^^^^^^^^^
+ValueError: invalid literal for int() with base 10: '4.0'
+
+2025-08-21 22:14:48,981 - underwater_training - INFO - 
+Training Summary:
+2025-08-21 22:14:48,981 - underwater_training - INFO -    YOLOV8: Failed - invalid literal for int() with base 10: '4.0'
+2025-08-21 22:14:48,981 - underwater_training - INFO - 
+Experiment completed! Results saved to: ./experiments_results/experiment_20250821_221448
