@@ -1,0 +1,8 @@
+{
+  "yolov8": {
+    "approach": "yolov8",
+    "error": "'NoneType' object is not iterable",
+    "training_time": 51.25929307937622,
+    "timestamp": "2025-08-21T22:35:48.625085"
+  }
+}
