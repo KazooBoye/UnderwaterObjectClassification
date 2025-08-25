@@ -653,7 +653,7 @@ class DETRTrainer:
         ground_truths = []
         
         print("Computing predictions for mAP calculation...")
-        for batch in test_dataset.take(100):  # Limit to avoid memory issues
+        for batch in test_dataset:  # Process all test batches
             images, targets = batch
             try:
                 pred = self.model(images, training=False)
@@ -714,7 +714,7 @@ class DETRTrainer:
         # Get a few test samples
         test_dataset = self.data_loader.create_tf_dataset('test', batch_size=1)
         
-        for i, (image, _) in enumerate(test_dataset.take(sample_images)):
+        for i, (image, _) in enumerate(test_dataset.take(sample_images)):  # This one is OK - user-controlled sample count
             # Get predictions with attention weights
             predictions = self.model(image, training=False)
             attention_weights = predictions['attention_weights']

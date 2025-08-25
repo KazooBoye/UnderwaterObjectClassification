@@ -7,3 +7,7 @@ experiments/experiment_results/experiment_20250821_161322/experiment_metadata.js
 *.pyc
 /experiments/experiments_results
 *.pyc
+/experiments/approach1_yolov8/__pycache__
+/experiments/approach1_faster_rcnn/__pycache__
+/experiments/approach1_detr/__pycache__
+/experiments/wandb

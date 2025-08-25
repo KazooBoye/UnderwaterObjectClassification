@@ -4,7 +4,7 @@ model_name: "underwater_yolov8"
 
 # Dataset settings
 dataset:
-  root_path: "/Users/caoducanh/Desktop/Coding/UnderwaterObjectClassification/preprocessed_dataset"
+  root_path: "./preprocessed_dataset"
   num_classes: 7
   classes: ['fish', 'jellyfish', 'penguin', 'puffin', 'shark', 'starfish', 'stingray']
   image_size: [640, 640]
@@ -18,7 +18,7 @@ model:
   
 # Training parameters
 training:
-  batch_size: 16
+  batch_size: 8
   epochs: 150
   learning_rate: 1e-3
   weight_decay: 5e-4

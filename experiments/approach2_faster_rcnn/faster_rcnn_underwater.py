@@ -573,7 +573,7 @@ class FasterRCNNTrainer:
         ground_truths = []
         
         print("Computing predictions for mAP calculation...")
-        for batch in test_dataset.take(100):  # Limit to avoid memory issues
+        for batch in test_dataset:  # Process all test batches
             images, targets = batch
             try:
                 pred = self.model(images, training=False)

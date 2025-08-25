@@ -244,7 +244,7 @@ class DataLoader:
         return annotations
     
     def create_tf_dataset(self, split: str = 'train', batch_size: int = None) -> tf.data.Dataset:
-        """Create TensorFlow dataset"""
+        """Create TensorFlow dataset with proper batching for YOLO"""
         if batch_size is None:
             batch_size = self.config.batch_size
         
@@ -266,11 +266,13 @@ class DataLoader:
             for ann in annotations:
                 # Load and preprocess image
                 image = cv2.imread(ann['image_path'])
+                if image is None:
+                    continue
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
                 image = cv2.resize(image, self.config.image_size)
                 image = image.astype(np.float32) / 255.0
                 
-                # Prepare targets
+                # Prepare targets with fixed maximum size for batching
                 boxes = np.array(ann['boxes'], dtype=np.float32)
                 labels = np.array(ann['labels'], dtype=np.int32)
                 
@@ -282,24 +284,47 @@ class DataLoader:
                     boxes[:, [0, 2]] *= scale_x
                     boxes[:, [1, 3]] *= scale_y
                 
+                # Pad or truncate to fixed size (max 100 objects per image)
+                max_objects = 100
+                padded_boxes = np.zeros((max_objects, 4), dtype=np.float32)
+                padded_labels = np.zeros((max_objects,), dtype=np.int32)
+                valid_objects = np.zeros((max_objects,), dtype=np.float32)
+                
+                num_objects = min(len(boxes), max_objects)
+                if num_objects > 0:
+                    padded_boxes[:num_objects] = boxes[:num_objects]
+                    padded_labels[:num_objects] = labels[:num_objects] 
+                    valid_objects[:num_objects] = 1.0  # Mark valid objects
+                
                 yield image, {
-                    'boxes': boxes,
-                    'labels': labels,
-                    'image_id': ann['image_id']
+                    'boxes': padded_boxes,
+                    'labels': padded_labels,
+                    'valid_objects': valid_objects,
+                    'num_objects': num_objects
                 }
         
-        # Create dataset
+        # Create dataset with fixed shapes for proper batching
         dataset = tf.data.Dataset.from_generator(
             generator,
             output_signature=(
                 tf.TensorSpec(shape=(*self.config.image_size, 3), dtype=tf.float32),
                 {
-                    'boxes': tf.TensorSpec(shape=(None, 4), dtype=tf.float32),
-                    'labels': tf.TensorSpec(shape=(None,), dtype=tf.int32),
-                    'image_id': tf.TensorSpec(shape=(), dtype=tf.string)
+                    'boxes': tf.TensorSpec(shape=(100, 4), dtype=tf.float32),
+                    'labels': tf.TensorSpec(shape=(100,), dtype=tf.int32),
+                    'valid_objects': tf.TensorSpec(shape=(100,), dtype=tf.float32),
+                    'num_objects': tf.TensorSpec(shape=(), dtype=tf.int32)
                 }
             )
         )
+        
+        # Add batching, shuffling, and prefetching
+        if split == 'train':
+            dataset = dataset.shuffle(buffer_size=1000)
+        
+        dataset = dataset.batch(batch_size, drop_remainder=False)
+        dataset = dataset.prefetch(tf.data.AUTOTUNE)
+        
+        return dataset
         
         if split == 'train':
             dataset = dataset.shuffle(1000)
